@@ -10,6 +10,8 @@ export default function KindleClippingsReader() {
     const [editedNote, setEditedNote] = useState('');
     const [showExportModal, setShowExportModal] = useState(false);
     const [viewMode, setViewMode] = useState('bookshelf'); // 'bookshelf' or 'reading'
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editedTitle, setEditedTitle] = useState('');
 
     const parseClippings = (text) => {
         const entries = text.split('==========').filter(entry => entry.trim());
@@ -209,6 +211,35 @@ export default function KindleClippingsReader() {
         setEditedNote('');
     };
 
+    const startEditingTitle = () => {
+        setEditedTitle(selectedBook?.title || '');
+        setIsEditingTitle(true);
+    };
+
+    const saveTitle = () => {
+        if (!selectedBook || !editedTitle.trim()) return;
+
+        const updatedClippings = clippings.map(book => {
+            if (book.title === selectedBook.title) {
+                return {
+                    ...book,
+                    title: editedTitle.trim()
+                };
+            }
+            return book;
+        });
+
+        setClippings(updatedClippings);
+        const updatedBook = updatedClippings.find(book => book.title === editedTitle.trim());
+        setSelectedBook(updatedBook);
+        setIsEditingTitle(false);
+    };
+
+    const cancelEditingTitle = () => {
+        setIsEditingTitle(false);
+        setEditedTitle('');
+    };
+
     if (clippings.length === 0) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 p-8">
@@ -309,25 +340,27 @@ export default function KindleClippingsReader() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                             {clippings.map((book, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => selectBook(book)}
-                                    className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow text-left group"
+                                    className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow text-left group aspect-[3/4] flex flex-col"
                                 >
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <div className="bg-amber-100 p-3 rounded-lg group-hover:bg-amber-200 transition-colors">
-                                            <Book className="w-8 h-8 text-amber-600" />
+                                    <div className="flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <div className="bg-amber-100 p-2 rounded-lg group-hover:bg-amber-200 transition-colors mb-3 inline-block">
+                                                <Book className="w-6 h-6 text-amber-600" />
+                                            </div>
+                                            <h3 className="font-bold text-sm text-gray-800 line-clamp-4">
+                                                {book.title}
+                                            </h3>
                                         </div>
-                                    </div>
-                                    <h3 className="font-bold text-gray-800 mb-2 line-clamp-3 min-h-[4rem]">
-                                        {book.title}
-                                    </h3>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                        <span className="bg-amber-50 px-3 py-1 rounded-full font-medium">
-                                            {book.count} {book.count === 1 ? 'highlight' : 'highlights'}
-                                        </span>
+                                        <div className="mt-3">
+                                            <span className="bg-amber-50 px-2 py-1 rounded-full text-xs font-medium text-gray-700">
+                                                {book.count} {book.count === 1 ? 'highlight' : 'highlights'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </button>
                             ))}
@@ -378,9 +411,41 @@ export default function KindleClippingsReader() {
                     <div className="flex-1 flex flex-col">
                         <div className="bg-white shadow-md p-6 border-b border-gray-200">
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <h1 className="text-2xl font-bold text-gray-800 mb-2">{selectedBook?.title}</h1>
-                                    <p className="text-sm text-gray-600">
+                                <div className="flex-1 mr-4">
+                                    {isEditingTitle ? (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={editedTitle}
+                                                onChange={(e) => setEditedTitle(e.target.value)}
+                                                className="flex-1 text-2xl font-bold text-gray-800 border-2 border-amber-500 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                                autoFocus
+                                            />
+                                            <button
+                                                onClick={saveTitle}
+                                                className="p-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                            >
+                                                <Save className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={cancelEditingTitle}
+                                                className="p-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <h1 className="text-2xl font-bold text-gray-800">{selectedBook?.title}</h1>
+                                            <button
+                                                onClick={startEditingTitle}
+                                                className="p-1 text-gray-400 hover:text-amber-600 transition-colors"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                    <p className="text-sm text-gray-600 mt-2">
                                         Clipping {currentIndex + 1} of {selectedBook?.notes.length}
                                     </p>
                                 </div>
